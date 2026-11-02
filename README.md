@@ -1,4 +1,5 @@
-# Rahul Portfolio
+<<<<<<< HEAD
+# Vaibhav Portfolio
 
 A personal portfolio built with React, Vite, Tailwind CSS, Framer Motion, AOS, Material UI, Lucide icons, and optional Supabase support.
 
@@ -54,3 +55,7 @@ VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
 ```
 
 Without those values, the public site uses local fallback content.
+=======
+# Portfolio
+AI &amp; ML developer turning complex models into scalable, real-world web applications and intuitive user experiences
+>>>>>>> bde008afd6d77824b0d63de6de081b71eed8d99a
