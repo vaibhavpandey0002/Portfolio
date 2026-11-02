@@ -244,7 +244,7 @@ const Komentar = () => {
             if (!isSupabaseConfigured) {
                 setPinnedComment({
                     id: "welcome",
-                    user_name: "Rahul",
+                    user_name: "Vaibhav",
                     content: "Thanks for visiting my portfolio. Feel free to leave a message.",
                     created_at: new Date().toISOString(),
                     is_pinned: true,

@@ -1,7 +1,7 @@
 {
-  "name": "portofolio-v5",
+  "name": "vaibhav-portfolio",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,27 +10,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@emotion/react": "^11.13.3",
-    "@emotion/styled": "^11.13.0",
-    "@mui/icons-material": "^6.1.6",
-    "@mui/material": "^6.1.6",
-    "@mui/styled-engine-sc": "^6.1.6",
-    "@shadcn/ui": "^0.0.4",
     "@supabase/supabase-js": "^2.49.9",
     "aos": "^2.3.4",
     "axios": "^1.10.0",
-    "caniuse-lite": "^1.0.30001774",
     "clsx": "^2.1.1",
     "framer-motion": "^11.15.0",
     "lucide-react": "^0.454.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-helmet-async": "^2.0.5",
-    "react-intersection-observer": "^9.13.1",
     "react-router-dom": "^6.28.0",
-    "react-swipeable-views": "^0.14.0",
-    "shadcn-ui": "^0.2.3",
-    "styled-components": "^6.1.13",
     "sweetalert2": "^11.15.0",
     "tailwind-merge": "^2.5.5"
   },
@@ -46,8 +35,10 @@
     "eslint-plugin-react-refresh": "^0.4.14",
     "globals": "^15.11.0",
     "postcss": "^8.5.6",
-    "tailwind-scrollbar": "^3.1.0",
     "tailwindcss": "^3.4.17",
     "vite": "^5.4.10"
+  },
+  "allowScripts": {
+    "esbuild@0.21.5": true
   }
 }

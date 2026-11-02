@@ -1,173 +1,163 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Code2, Github, Globe, User } from 'lucide-react';
-import AOS from 'aos';
-import 'aos/dist/aos.css';
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { profile } from "../data/profile";
 
-const TypewriterEffect = ({ text }) => {
-  const [displayText, setDisplayText] = useState('');
-  
+/* ── Typewriter sub-component ────────────────────────────────── */
+const Typewriter = ({ text }) => {
+  const [displayed, setDisplayed] = useState("");
+
   useEffect(() => {
-    let index = 0;
+    let i = 0;
     const timer = setInterval(() => {
-      if (index <= text.length) {
-        setDisplayText(text.slice(0, index));
-        index++;
+      if (i <= text.length) {
+        setDisplayed(text.slice(0, i));
+        i++;
       } else {
         clearInterval(timer);
       }
-    }, 260);
-    
+    }, 60);
     return () => clearInterval(timer);
   }, [text]);
 
   return (
-    <span className="inline-block">
-      {displayText}
-      <span className="animate-pulse">|</span>
+    <span>
+      {displayed}
+      <span className="typewriter-cursor" />
     </span>
   );
 };
 
-const BackgroundEffect = () => (
-  <div className="absolute inset-0 overflow-hidden">
-    <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/20 to-purple-600/20 blur-3xl animate-pulse" />
-    <div className="absolute inset-0 bg-gradient-to-tr from-indigo-600/10 via-transparent to-purple-600/10 blur-2xl animate-float" />
-  </div>
-);
-
-const IconButton = ({ Icon }) => (
-  <div className="relative group hover:scale-110 transition-transform duration-300">
-    <div className="absolute -inset-2 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full blur opacity-30 group-hover:opacity-75 transition duration-300" />
-    <div className="relative p-2 sm:p-3 bg-black/50 backdrop-blur-sm rounded-full border border-white/10">
-      <Icon className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-white" />
+/* ── Neural grid loading animation ──────────────────────────── */
+const NeuralGrid = () => {
+  const dots = Array.from({ length: 64 }, (_, i) => i);
+  return (
+    <div className="grid grid-cols-8 gap-2 w-40 mx-auto opacity-20">
+      {dots.map((i) => (
+        <div
+          key={i}
+          className="w-1.5 h-1.5 rounded-full bg-electric-blue"
+          style={{
+            animation: `pulse 2s ease-in-out infinite`,
+            animationDelay: `${(i % 8) * 0.1 + Math.floor(i / 8) * 0.1}s`,
+          }}
+        />
+      ))}
     </div>
+  );
+};
+
+/* ── Progress bar ────────────────────────────────────────────── */
+const ProgressBar = ({ duration }) => (
+  <div className="w-48 h-px bg-white/5 rounded-full overflow-hidden mx-auto">
+    <motion.div
+      className="h-full bg-electric-blue"
+      initial={{ width: "0%" }}
+      animate={{ width: "100%" }}
+      transition={{ duration, ease: "linear" }}
+    />
   </div>
 );
 
+/* ── Welcome Screen ──────────────────────────────────────────── */
 const WelcomeScreen = ({ onLoadingComplete }) => {
-  const [isLoading, setIsLoading] = useState(true);
+  const [phase, setPhase] = useState("loading"); // loading | done
+  const LOAD_DURATION = 3200;
 
   useEffect(() => {
-    AOS.init({
-      duration: 1000,
-      once: false,
-      mirror: false,
-    });
-
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-      setTimeout(() => {
-        onLoadingComplete?.();
-      }, 1000);
-    }, 3400);
-    
-    return () => clearTimeout(timer);
+    const t1 = setTimeout(() => {
+      setPhase("done");
+    }, LOAD_DURATION);
+    const t2 = setTimeout(() => {
+      onLoadingComplete?.();
+    }, LOAD_DURATION + 700);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [onLoadingComplete]);
 
   const containerVariants = {
     exit: {
       opacity: 0,
-      scale: 1.1,
-      filter: "blur(10px)",
-      transition: {
-        duration: 0.8,
-        ease: "easeInOut",
-        when: "beforeChildren",
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const childVariants = {
-    exit: {
-      y: -20,
-      opacity: 0,
-      transition: {
-        duration: 0.4,
-        ease: "easeInOut"
-      }
-    }
+      scale: 1.05,
+      filter: "blur(12px)",
+      transition: { duration: 0.7, ease: "easeInOut" },
+    },
   };
 
   return (
-    <AnimatePresence>
-      {isLoading && (
+    <AnimatePresence mode="wait">
+      {phase !== "exited" && (
         <motion.div
-          className="fixed inset-0 bg-[#030014]"
-          initial={{ opacity: 0 }}
+          key="welcome"
+          className="fixed inset-0 z-[100] bg-charcoal flex items-center justify-center overflow-hidden"
+          initial={{ opacity: 1 }}
           animate={{ opacity: 1 }}
           exit="exit"
           variants={containerVariants}
         >
-          <BackgroundEffect />
-          
-          <div className="relative min-h-screen flex items-center justify-center px-4">
-            <div className="w-full max-w-4xl mx-auto">
-              {/* Icons */}
-              <motion.div 
-                className="flex justify-center gap-3 sm:gap-4 md:gap-8 mb-6 sm:mb-8 md:mb-12"
-                variants={childVariants}
-              >
-                {[Code2, User, Github].map((Icon, index) => (
-                  <div key={index} data-aos="fade-down" data-aos-delay={index * 200}>
-                    <IconButton Icon={Icon} />
-                  </div>
-                ))}
-              </motion.div>
+          {/* Ambient glow */}
+          <div
+            aria-hidden
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                "radial-gradient(ellipse 60% 40% at 50% 50%, rgba(0,87,255,0.08) 0%, transparent 70%)",
+            }}
+          />
 
-              {/* Welcome Text */}
-              <motion.div 
-                className="text-center mb-6 sm:mb-8 md:mb-12"
-                variants={childVariants}
-              >
-                <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold space-y-2 sm:space-y-4">
-                  <div className="mb-2 sm:mb-4">
-                    <span data-aos="fade-right" data-aos-delay="200" className="inline-block px-2 bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent">
-                      Welcome
-                    </span>{' '}
-                    <span data-aos="fade-right" data-aos-delay="400" className="inline-block px-2 bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent">
-                      To
-                    </span>{' '}
-                    <span data-aos="fade-right" data-aos-delay="600" className="inline-block px-2 bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent">
-                      My
-                    </span>
-                  </div>
-                  <div>
-                    <span data-aos="fade-up" data-aos-delay="800" className="inline-block px-2 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                      Portfolio
-                    </span>{' '}
-                    <span data-aos="fade-up" data-aos-delay="1000" className="inline-block px-2 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                      Website
-                    </span>
-                  </div>
-                </h1>
-              </motion.div>
+          <div className="relative text-center px-6 select-none">
+            {/* Monogram */}
+            <motion.div
+              initial={{ scale: 0.6, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.6, ease: "backOut" }}
+              className="inline-flex items-center justify-center w-20 h-20 rounded-2xl border border-electric-blue/30 bg-electric-blue/10 mb-8 mx-auto"
+            >
+              <span className="text-3xl font-bold font-display text-white tracking-tight">
+                VK
+              </span>
+            </motion.div>
 
-              {/* Website Link */}
-              <motion.div 
-                className="text-center"
-                variants={childVariants}
-                data-aos="fade-up"
-                data-aos-delay="1200"
-              >
-                <a
-                  href={profile.website}
-                  className="inline-flex items-center gap-2 px-4 py-2 sm:px-6 sm:py-3 rounded-full relative group hover:scale-105 transition-transform duration-300"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/20 to-purple-600/20 rounded-full blur-md group-hover:blur-lg transition-all duration-300" />
-                  <div className="relative flex items-center gap-2 text-lg sm:text-xl md:text-2xl">
-                    <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" />
-                    <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                      <TypewriterEffect text={profile.name.toLowerCase()} />
-                    </span>
-                  </div>
-                </a>
-              </motion.div>
-            </div>
+            {/* Name */}
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.6 }}
+              className="text-4xl sm:text-5xl font-bold font-display text-white tracking-tight mb-2"
+            >
+              {profile.firstName}{" "}
+              <span className="text-electric-blue">{profile.lastName}</span>
+            </motion.h1>
+
+            {/* Role typewriter */}
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8, duration: 0.4 }}
+              className="text-base font-mono text-gray-500 mb-10 tracking-widest uppercase"
+            >
+              <Typewriter text={profile.role} />
+            </motion.p>
+
+            {/* Neural grid */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6, duration: 0.4 }}
+              className="mb-8"
+            >
+              <NeuralGrid />
+            </motion.div>
+
+            {/* Progress */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+            >
+              <ProgressBar duration={LOAD_DURATION / 1000} />
+              <p className="mt-3 text-[11px] font-mono text-gray-700 tracking-widest uppercase">
+                {phase === "loading" ? "Initialising workspace…" : "Ready"}
+              </p>
+            </motion.div>
           </div>
         </motion.div>
       )}

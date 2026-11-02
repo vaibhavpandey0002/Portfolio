@@ -1,27 +1,46 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
 import React, { useState, lazy, Suspense } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
-import "./index.css";
-import Navbar from "./components/Navbar";
-import Home from "./Pages/Home";
-import About from "./Pages/About";
-import AnimatedBackground from "./components/Background";
 import { AnimatePresence } from "framer-motion";
-import Footer from "./components/Footer";
+import "./index.css";
 
+// Infrastructure
+import Background from "./components/Background";
+import FloatingNav from "./components/FloatingNav";
+import CommandPalette from "./components/CommandPalette";
+
+// Always-loaded (hero and above-fold)
+import Home from "./Pages/Home";
 import Login from "./Pages/Login";
 import Dashboard from "./Pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-const Portofolio = lazy(() => import("./Pages/Portofolio"));
-const ContactPage = lazy(() => import("./Pages/Contact"));
-const ProjectDetails = lazy(() => import("./components/ProjectDetail"));
-const WelcomeScreen = lazy(() => import("./Pages/WelcomeScreen"));
-const NotFoundPage = lazy(() => import("./Pages/404"));
+// Lazy sections
+const WelcomeScreen  = lazy(() => import("./Pages/WelcomeScreen"));
+const About          = lazy(() => import("./Pages/About"));
+const Projects       = lazy(() => import("./Pages/Projects"));
+const Research       = lazy(() => import("./Pages/Research"));
+const Skills         = lazy(() => import("./Pages/Skills"));
+const Experience     = lazy(() => import("./Pages/Experience"));
+const SocialMedia    = lazy(() => import("./Pages/SocialMedia"));
+const Contact        = lazy(() => import("./Pages/Contact"));
+const Footer         = lazy(() => import("./components/Footer"));
+const ProjectDetail  = lazy(() => import("./components/ProjectDetail"));
+const NotFoundPage   = lazy(() => import("./Pages/404"));
 
+const SectionFallback = () => (
+  <div className="min-h-[50vh] bg-charcoal flex items-center justify-center">
+    <div className="w-6 h-6 border-2 border-electric-blue border-t-transparent rounded-full animate-spin" />
+  </div>
+);
+
+/* ── Single-page landing layout ─────────────────────────────── */
 const LandingPage = ({ showWelcome, setShowWelcome }) => {
+  const [cmdOpen, setCmdOpen] = useState(false);
+
   return (
     <>
+      {/* Welcome / loading screen */}
       <AnimatePresence mode="wait">
         {showWelcome && (
           <Suspense fallback={null}>
@@ -30,44 +49,71 @@ const LandingPage = ({ showWelcome, setShowWelcome }) => {
         )}
       </AnimatePresence>
 
+      {/* Main content */}
       {!showWelcome && (
         <>
-          <Navbar />
-      
-          <Home />
-          <About />
-          <Suspense fallback={<div className="h-20" />}>
-            <Portofolio />
-            <ContactPage />
+          <FloatingNav onCommandPalette={() => setCmdOpen(true)} />
+          <CommandPalette isOpen={cmdOpen} onClose={() => setCmdOpen(false)} />
+
+          <main>
+            {/* Hero */}
+            <Home />
+
+            {/* Subsequent sections — lazy loaded */}
+            <Suspense fallback={<SectionFallback />}>
+              <About />
+            </Suspense>
+            <Suspense fallback={<SectionFallback />}>
+              <Projects />
+            </Suspense>
+            <Suspense fallback={<SectionFallback />}>
+              <Research />
+            </Suspense>
+            <Suspense fallback={<SectionFallback />}>
+              <Skills />
+            </Suspense>
+            <Suspense fallback={<SectionFallback />}>
+              <Experience />
+            </Suspense>
+            <Suspense fallback={<SectionFallback />}>
+              <SocialMedia />
+            </Suspense>
+            <Suspense fallback={<SectionFallback />}>
+              <Contact />
+            </Suspense>
+          </main>
+
+          <Suspense fallback={null}>
+            <Footer />
           </Suspense>
-          <Footer />
         </>
       )}
     </>
   );
 };
 
-const ProjectPageLayout = () => (
+/* ── Project detail page ─────────────────────────────────────── */
+const ProjectPage = () => (
   <>
-    <Suspense fallback={<div className="min-h-screen" />}>
-      <ProjectDetails />
+    <Suspense fallback={<SectionFallback />}>
+      <ProjectDetail />
     </Suspense>
-    <Footer />
+    <Suspense fallback={null}>
+      <Footer />
+    </Suspense>
   </>
 );
 
+/* ── App root ────────────────────────────────────────────────── */
 function App() {
   const [showWelcome, setShowWelcome] = useState(true);
 
   return (
-    
     <HelmetProvider>
-      <div className="pointer-events-none">
-  <AnimatedBackground />
-</div>
+      <Background />
       <BrowserRouter>
         <Routes>
-          {/* PUBLIC */}
+          {/* Public */}
           <Route
             path="/"
             element={
@@ -78,12 +124,13 @@ function App() {
             }
           />
 
-          <Route path="/project/:slug" element={<ProjectPageLayout />} />
+          {/* Project case study */}
+          <Route path="/project/:slug" element={<ProjectPage />} />
 
-          {/* AUTH */}
+          {/* Auth */}
           <Route path="/login" element={<Login />} />
 
-          {/* ADMIN (PROTECTED) */}
+          {/* Admin (protected) */}
           <Route
             path="/dashboard/*"
             element={

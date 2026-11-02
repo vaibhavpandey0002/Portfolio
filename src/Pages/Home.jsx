@@ -1,188 +1,343 @@
 import React, { useState, useEffect, useCallback, memo } from "react";
 import { Helmet } from "react-helmet-async";
-import { Github, Linkedin, Mail, ExternalLink, Instagram, Sparkles } from "lucide-react";
-import AOS from "aos";
-import "aos/dist/aos.css";
+import { ArrowRight, FileText, Github, Linkedin, Instagram, Facebook, Twitter, Mail, ExternalLink } from "lucide-react";
+import { motion } from "framer-motion";
 import { profile } from "../data/profile";
 
-const StatusBadge = memo(() => (
-  <div className="inline-block animate-float lg:mx-0" data-aos="zoom-in" data-aos-delay="400">
-    <div className="relative group">
-      <div className="absolute -inset-0.5 bg-gradient-to-r from-[#6366f1] to-[#a855f7] rounded-full blur opacity-30 group-hover:opacity-50 transition duration-1000"></div>
-      <div className="relative px-3 sm:px-4 py-2 rounded-full bg-black/40 backdrop-blur-xl border border-white/10">
-        <span className="bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-transparent bg-clip-text sm:text-sm text-[0.7rem] font-medium flex items-center">
-          <Sparkles className="sm:w-4 sm:h-4 w-3 h-3 mr-2 text-blue-400" />
-          Open to internships and entry-level roles
-        </span>
-      </div>
+/* ── Typing animation ───────────────────────────────────────── */
+const TypewriterRole = ({ words }) => {
+  const [text, setText] = useState("");
+  const [wordIdx, setWordIdx] = useState(0);
+  const [charIdx, setCharIdx] = useState(0);
+  const [isTyping, setIsTyping] = useState(true);
+  const TYPING_SPEED = 90;
+  const ERASE_SPEED = 45;
+  const PAUSE = 2000;
+
+  const tick = useCallback(() => {
+    const word = words[wordIdx];
+    if (isTyping) {
+      if (charIdx < word.length) {
+        setText((p) => p + word[charIdx]);
+        setCharIdx((c) => c + 1);
+      } else {
+        setTimeout(() => setIsTyping(false), PAUSE);
+      }
+    } else if (charIdx > 0) {
+      setText((p) => p.slice(0, -1));
+      setCharIdx((c) => c - 1);
+    } else {
+      setWordIdx((w) => (w + 1) % words.length);
+      setIsTyping(true);
+    }
+  }, [charIdx, isTyping, wordIdx, words]);
+
+  useEffect(() => {
+    const t = setTimeout(tick, isTyping ? TYPING_SPEED : ERASE_SPEED);
+    return () => clearTimeout(t);
+  }, [tick, isTyping]);
+
+  return (
+    <span className="font-mono text-sm text-ink-muted">
+      {text}
+      <span className="typewriter-cursor" />
+    </span>
+  );
+};
+
+/* ── Neural-net SVG visualization ───────────────────────────── */
+const NeuralViz = memo(() => {
+  const inputNodes = [
+    { x: 48, y: 60 }, { x: 48, y: 110 }, { x: 48, y: 160 }, { x: 48, y: 210 },
+  ];
+  const hiddenNodes = [
+    { x: 152, y: 45 }, { x: 152, y: 90 }, { x: 152, y: 135 },
+    { x: 152, y: 180 }, { x: 152, y: 225 },
+  ];
+  const outputNodes = [
+    { x: 255, y: 95 }, { x: 255, y: 155 }, { x: 255, y: 215 },
+  ];
+
+  const edges = [];
+  inputNodes.forEach((n) =>
+    hiddenNodes.forEach((h) => edges.push({ x1: n.x, y1: n.y, x2: h.x, y2: h.y, type: "ih" }))
+  );
+  hiddenNodes.forEach((h) =>
+    outputNodes.forEach((o) => edges.push({ x1: h.x, y1: h.y, x2: o.x, y2: o.y, type: "ho" }))
+  );
+
+  return (
+    <svg viewBox="0 0 300 270" className="w-full max-w-[300px] mx-auto opacity-80" aria-hidden>
+      <defs>
+        <radialGradient id="blueNode" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#0057FF" stopOpacity="0.9" />
+          <stop offset="100%" stopColor="#0057FF" stopOpacity="0.3" />
+        </radialGradient>
+        <radialGradient id="orangeNode" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#FF5500" stopOpacity="0.9" />
+          <stop offset="100%" stopColor="#FF5500" stopOpacity="0.3" />
+        </radialGradient>
+        <radialGradient id="hiddenNode" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#3374FF" stopOpacity="0.9" />
+          <stop offset="100%" stopColor="#3374FF" stopOpacity="0.2" />
+        </radialGradient>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="2" result="blur" />
+          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+      </defs>
+
+      {/* Edges */}
+      {edges.map((e, i) => (
+        <line
+          key={i}
+          x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2}
+          stroke={e.type === "ih" ? "rgba(0,87,255,0.12)" : "rgba(255,85,0,0.12)"}
+          strokeWidth="0.8"
+        />
+      ))}
+
+      {/* Animated "signal" pulses on random edges */}
+      {[edges[2], edges[7], edges[12], edges[17]].map((e, i) => (
+        e && (
+          <circle key={`pulse-${i}`} r="2.5" fill="#0057FF" opacity="0.8" filter="url(#glow)">
+            <animateMotion
+              dur={`${1.4 + i * 0.4}s`}
+              repeatCount="indefinite"
+              begin={`${i * 0.35}s`}
+            >
+              <mpath>
+                <animate
+                  attributeName="d"
+                  from={`M${e.x1},${e.y1} L${e.x2},${e.y2}`}
+                  to={`M${e.x1},${e.y1} L${e.x2},${e.y2}`}
+                />
+              </mpath>
+            </animateMotion>
+            <animateMotion
+              dur={`${1.4 + i * 0.4}s`}
+              repeatCount="indefinite"
+              begin={`${i * 0.35}s`}
+              path={`M${e.x1},${e.y1} L${e.x2},${e.y2}`}
+            />
+          </circle>
+        )
+      ))}
+
+      {/* Input nodes */}
+      {inputNodes.map((n, i) => (
+        <g key={`in-${i}`}>
+          <circle cx={n.x} cy={n.y} r="7" fill="url(#blueNode)" filter="url(#glow)">
+            <animate attributeName="r" values="6;8;6" dur={`${2 + i * 0.3}s`} repeatCount="indefinite" />
+          </circle>
+          <circle cx={n.x} cy={n.y} r="3" fill="#0057FF" opacity="0.9" />
+        </g>
+      ))}
+
+      {/* Hidden nodes */}
+      {hiddenNodes.map((n, i) => (
+        <g key={`h-${i}`}>
+          <circle cx={n.x} cy={n.y} r="8" fill="url(#hiddenNode)" filter="url(#glow)">
+            <animate attributeName="r" values="7;9;7" dur={`${2.5 + i * 0.25}s`} repeatCount="indefinite" />
+          </circle>
+          <circle cx={n.x} cy={n.y} r="3.5" fill="#3374FF" opacity="0.9" />
+        </g>
+      ))}
+
+      {/* Output nodes */}
+      {outputNodes.map((n, i) => (
+        <g key={`out-${i}`}>
+          <circle cx={n.x} cy={n.y} r="9" fill="url(#orangeNode)" filter="url(#glow)">
+            <animate attributeName="r" values="8;11;8" dur={`${2 + i * 0.4}s`} repeatCount="indefinite" />
+          </circle>
+          <circle cx={n.x} cy={n.y} r="4" fill="#FF5500" opacity="0.9" />
+        </g>
+      ))}
+
+      {/* Layer labels */}
+      {[
+        { x: 48, label: "INPUT" },
+        { x: 152, label: "HIDDEN" },
+        { x: 255, label: "OUTPUT" },
+      ].map(({ x, label }) => (
+        <text key={label} x={x} y="258" textAnchor="middle" fill="rgba(255,255,255,0.2)" fontSize="7" fontFamily="JetBrains Mono, monospace" letterSpacing="1">
+          {label}
+        </text>
+      ))}
+    </svg>
+  );
+});
+
+/* ── Currently Exploring panel ──────────────────────────────── */
+const ExploringPanel = memo(({ items }) => (
+  <div className="border border-white/8 rounded-xl overflow-hidden">
+    <div className="flex items-center gap-2 px-4 py-2.5 bg-white/3 border-b border-white/5">
+      <span className="w-1.5 h-1.5 rounded-full bg-vivid-orange animate-pulse" />
+      <span className="text-[10px] font-mono text-gray-500 uppercase tracking-widest">
+        Currently Exploring
+      </span>
+    </div>
+    <div className="divide-y divide-white/5">
+      {items.map((item, i) => (
+        <div key={i} className="flex items-center gap-3 px-4 py-2.5 group">
+          <span className="text-[10px] font-mono text-gray-700 w-4 shrink-0">{String(i + 1).padStart(2, "0")}</span>
+          <span className="text-xs font-body text-gray-400 group-hover:text-gray-200 transition-colors leading-snug">
+            {item}
+          </span>
+        </div>
+      ))}
     </div>
   </div>
 ));
 
-const MainTitle = memo(() => (
-  <div className="space-y-2" data-aos="fade-up" data-aos-delay="600">
-    <h1 className="text-5xl sm:text-6xl md:text-6xl lg:text-6xl xl:text-7xl font-bold tracking-tight">
-      <span className="relative inline-block">
-        <span className="absolute -inset-2 bg-gradient-to-r from-[#6366f1] to-[#a855f7] blur-2xl opacity-20"></span>
-        <span className="relative bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent">
-          {profile.role.split(" ")[0]}
-        </span>
-      </span>
-      <br />
-      <span className="relative inline-block mt-2">
-        <span className="absolute -inset-2 bg-gradient-to-r from-[#6366f1] to-[#a855f7] blur-2xl opacity-20"></span>
-        <span className="relative bg-gradient-to-r from-[#6366f1] to-[#a855f7] bg-clip-text text-transparent">
-          {profile.role.split(" ").slice(1).join(" ") || "Developer"}
-        </span>
-      </span>
-    </h1>
+/* ── Stats terminal ──────────────────────────────────────────── */
+const TerminalStats = memo(() => (
+  <div className="border border-white/8 rounded-xl overflow-hidden font-mono">
+    <div className="flex items-center gap-1.5 px-4 py-2.5 bg-white/3 border-b border-white/5">
+      <span className="w-2 h-2 rounded-full bg-red-500/60" />
+      <span className="w-2 h-2 rounded-full bg-yellow-500/60" />
+      <span className="w-2 h-2 rounded-full bg-green-500/60" />
+      <span className="ml-2 text-[9px] text-gray-700 tracking-wider">workspace.sh</span>
+    </div>
+    <div className="px-4 py-3 space-y-1.5 bg-black/20 text-[11px]">
+      <p><span className="text-gray-700">$ </span><span className="text-electric-blue">status</span></p>
+      <p><span className="text-gray-600">role</span> <span className="text-white ml-3">AI Engineer</span></p>
+      <p><span className="text-gray-600">focus</span> <span className="text-vivid-orange ml-2">Agentic AI</span></p>
+      <p><span className="text-gray-600">status</span> <span className="text-green-400 ml-1 animate-pulse-slow">● Available</span></p>
+      <p><span className="text-gray-600">loc</span> <span className="text-white ml-5">India</span></p>
+      <p className="pt-1"><span className="text-gray-700">$ </span><span className="typewriter-cursor" /></p>
+    </div>
   </div>
 ));
 
-const TechStack = memo(({ tech }) => (
-  <div className="px-4 py-2 hidden sm:block rounded-full bg-white/5 backdrop-blur-sm border border-white/10 text-sm text-gray-300 hover:bg-white/10 transition-colors">
-    {tech}
-  </div>
-));
-
-const CTAButton = memo(({ href, text, icon: Icon }) => (
-  <a href={href}>
-    <button className="group relative w-[160px]">
-      <div className="absolute -inset-0.5 bg-gradient-to-r from-[#4f52c9] to-[#8644c5] rounded-xl opacity-50 blur-md group-hover:opacity-90 transition-all duration-700"></div>
-      <div className="relative h-11 bg-[#030014] backdrop-blur-xl rounded-lg border border-white/10 leading-none overflow-hidden">
-        <div className="absolute inset-0 scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-500 bg-gradient-to-r from-[#4f52c9]/20 to-[#8644c5]/20"></div>
-        <span className="absolute inset-0 flex items-center justify-center gap-2 text-sm group-hover:gap-3 transition-all duration-300">
-          <span className="bg-gradient-to-r from-gray-200 to-white bg-clip-text text-transparent font-medium z-10">
-            {text}
-          </span>
-          <Icon className={`w-4 h-4 text-gray-200 ${text === "Contact" ? "group-hover:translate-x-1" : "group-hover:rotate-45"} transform transition-all duration-300 z-10`} />
-        </span>
-      </div>
-    </button>
+/* ── Social link ─────────────────────────────────────────────── */
+const SocialBtn = ({ href, icon: Icon, label }) => (
+  <a href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
+    className="p-2.5 rounded-lg border border-white/10 text-gray-400 hover:border-electric-blue hover:text-electric-blue transition-all duration-200 hover:bg-electric-blue/10">
+    <Icon className="w-4 h-4" />
   </a>
-));
+);
 
-const SocialLink = memo(({ icon: Icon, link, label }) => (
-  <a href={link} target="_blank" rel="noopener noreferrer" aria-label={label}>
-    <button className="group relative p-3" aria-label={label}>
-      <div className="absolute inset-0 bg-gradient-to-r from-[#6366f1] to-[#a855f7] rounded-xl blur opacity-20 group-hover:opacity-40 transition duration-300"></div>
-      <div className="relative rounded-xl bg-black/50 backdrop-blur-xl p-2 flex items-center justify-center border border-white/10 group-hover:border-white/20 transition-all duration-300">
-        <Icon className="w-5 h-5 text-gray-400 group-hover:text-white transition-colors" />
-      </div>
-    </button>
-  </a>
-));
-
-const TYPING_SPEED = 100;
-const ERASING_SPEED = 50;
-const PAUSE_DURATION = 2000;
-const SOCIAL_LINKS = [
-  { icon: Github, link: profile.socials.github, label: "GitHub Profile" },
-  { icon: Linkedin, link: profile.socials.linkedin, label: "LinkedIn Profile" },
-  { icon: Instagram, link: profile.socials.instagram, label: "Instagram Profile" },
-];
-
+/* ── Main Home component ─────────────────────────────────────── */
 const Home = () => {
-  const [text, setText] = useState("");
-  const [isTyping, setIsTyping] = useState(true);
-  const [wordIndex, setWordIndex] = useState(0);
-  const [charIndex, setCharIndex] = useState(0);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [isHovering, setIsHovering] = useState(false);
-
-  useEffect(() => {
-    const initAOS = () => AOS.init({ once: true, offset: 10 });
-    initAOS();
-    window.addEventListener("resize", initAOS);
-    return () => window.removeEventListener("resize", initAOS);
-  }, []);
-
-  useEffect(() => {
-    setIsLoaded(true);
-    return () => setIsLoaded(false);
-  }, []);
-
-  const handleTyping = useCallback(() => {
-    const words = profile.typingWords;
-    if (isTyping) {
-      if (charIndex < words[wordIndex].length) {
-        setText((prev) => prev + words[wordIndex][charIndex]);
-        setCharIndex((prev) => prev + 1);
-      } else {
-        setTimeout(() => setIsTyping(false), PAUSE_DURATION);
-      }
-    } else if (charIndex > 0) {
-      setText((prev) => prev.slice(0, -1));
-      setCharIndex((prev) => prev - 1);
-    } else {
-      setWordIndex((prev) => (prev + 1) % words.length);
-      setIsTyping(true);
-    }
-  }, [charIndex, isTyping, wordIndex]);
-
-  useEffect(() => {
-    const timeout = setTimeout(handleTyping, isTyping ? TYPING_SPEED : ERASING_SPEED);
-    return () => clearTimeout(timeout);
-  }, [handleTyping, isTyping]);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   return (
     <>
       <Helmet>
-        <title>{profile.name} - {profile.role}</title>
-        <meta name="description" content={`${profile.name}'s portfolio. ${profile.headline}`} />
-        <meta name="robots" content="index, follow" />
-        <link rel="canonical" href={profile.website} />
-        <meta property="og:title" content={`${profile.name} - ${profile.role}`} />
+        <title>{profile.name} — {profile.role}</title>
+        <meta name="description" content={`${profile.name} — ${profile.headline}`} />
+        <meta property="og:title" content={`${profile.name} — ${profile.role}`} />
         <meta property="og:description" content={profile.headline} />
-        <meta property="og:url" content={profile.website} />
-        <meta property="og:type" content="website" />
+        <meta name="robots" content="index, follow" />
       </Helmet>
 
-      <div className="min-h-screen bg-[#030014] overflow-hidden px-[5%] sm:px-[5%] lg:px-[10%]" id="Home">
-        <div className={`relative z-10 transition-all duration-1000 ${isLoaded ? "opacity-100" : "opacity-0"}`}>
-          <div className="container mx-auto min-h-screen">
-            <div className="flex flex-col lg:flex-row items-center justify-center h-screen md:justify-between gap-0 sm:gap-12 lg:gap-20">
-              <div className="w-full lg:w-1/2 space-y-6 sm:space-y-8 text-left order-1" data-aos="fade-right" data-aos-delay="200">
-                <div className="space-y-4 sm:space-y-6">
-                  <StatusBadge />
-                  <MainTitle />
-                  <div className="h-8 flex items-center" data-aos="fade-up" data-aos-delay="800">
-                    <span className="text-xl md:text-2xl bg-gradient-to-r from-gray-100 to-gray-300 bg-clip-text text-transparent font-light">
-                      {text}
-                    </span>
-                    <span className="w-[3px] h-6 bg-gradient-to-t from-[#6366f1] to-[#a855f7] ml-1 animate-blink"></span>
-                  </div>
-                  <p className="text-base md:text-lg text-gray-400 max-w-xl leading-relaxed font-light" data-aos="fade-up" data-aos-delay="1000">
-                    {profile.heroDescription}
-                  </p>
-                  <div className="flex flex-wrap gap-3 justify-start" data-aos="fade-up" data-aos-delay="1200">
-                    {profile.techStack.map((tech) => <TechStack key={tech} tech={tech} />)}
-                  </div>
-                  <div className="flex flex-row gap-3 w-full justify-start" data-aos="fade-up" data-aos-delay="1400">
-                    <CTAButton href="#Portofolio" text="Projects" icon={ExternalLink} />
-                    <CTAButton href="#Contact" text="Contact" icon={Mail} />
-                  </div>
-                  <div className="hidden sm:flex gap-4 justify-start" data-aos="fade-up" data-aos-delay="1600">
-                    {SOCIAL_LINKS.map((social) => <SocialLink key={social.label} {...social} />)}
-                  </div>
-                </div>
-              </div>
+      <div id="Home" className="min-h-screen flex flex-col lg:flex-row bg-[#0B0D13]">
 
+        {/* ── LEFT SIDE: sleek high-tech workspace ───────────────────────── */}
+        <div className="lg:w-[55%] bg-[#0B0D13] border-b lg:border-b-0 lg:border-r border-white/5 dot-grid flex items-center order-2 lg:order-1 px-6 sm:px-12 lg:px-16 xl:px-20 py-24 lg:py-0 min-h-[60vh] lg:min-h-screen">
+          <div className={`max-w-lg w-full transition-all duration-700 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+
+            {/* Label row */}
+            <div className="flex items-center gap-3 mb-8">
+              <div className="h-px w-10 bg-electric-blue" />
+              <TypewriterRole words={profile.typingWords} />
+            </div>
+
+            {/* Name — editorial hero typography */}
+            <h1 className="font-display font-bold leading-none tracking-tight text-white mb-6">
+              <span className="block text-[clamp(3.5rem,9vw,6.5rem)] leading-none text-white">
+                {profile.firstName.toUpperCase()}
+              </span>
+              <span className="block text-[clamp(3.5rem,9vw,6.5rem)] leading-none text-electric-blue">
+                {profile.lastName.toUpperCase()}
+              </span>
+            </h1>
+
+            {/* Philosophy tagline */}
+            <div className="border-l-2 border-vivid-orange pl-4 mb-6">
+              <p className="text-gray-300 font-body italic text-base lg:text-lg leading-relaxed">
+                &ldquo;{profile.philosophy}&rdquo;
+              </p>
+            </div>
+
+            {/* Description */}
+            <p className="text-gray-400 font-body text-sm lg:text-base leading-relaxed mb-8">
+              {profile.heroDescription}
+            </p>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-wrap gap-3 mb-8">
+              <a href="#Projects">
+                <button className="flex items-center gap-2 px-5 py-2.5 bg-electric-blue text-white text-sm font-medium font-body rounded-lg hover:bg-electric-blue-light transition-all shadow-md shadow-electric-blue/20 hover:shadow-electric-blue/40">
+                  View Projects
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </a>
+              <a href={profile.resumeUrl} target="_blank" rel="noopener noreferrer">
+                <button className="flex items-center gap-2 px-5 py-2.5 border border-white/20 text-white text-sm font-medium font-body rounded-lg hover:bg-white/10 hover:border-white/40 transition-all duration-200">
+                  <FileText className="w-4 h-4" />
+                  Resume
+                </button>
+              </a>
+              <a href="#Contact">
+                <button className="flex items-center gap-2 px-5 py-2.5 border border-white/10 text-gray-300 text-sm font-medium font-body rounded-lg hover:border-vivid-orange hover:text-vivid-orange transition-all duration-200">
+                  <Mail className="w-4 h-4" />
+                  Contact
+                </button>
+              </a>
+            </div>
+
+            {/* Social links */}
+            <div className="flex items-center gap-2">
+              <SocialBtn href={profile.socials.github} icon={Github} label="GitHub" />
+              <SocialBtn href={profile.socials.linkedin} icon={Linkedin} label="LinkedIn" />
+              <SocialBtn href={profile.socials.instagram} icon={Instagram} label="Instagram" />
+              <SocialBtn href={profile.socials.facebook} icon={Facebook} label="Facebook" />
+              <SocialBtn href={`mailto:${profile.email}`} icon={Mail} label="Email" />
+            </div>
+          </div>
+        </div>
+
+        {/* ── RIGHT SIDE: deep charcoal ───────────────────────── */}
+        <div className="lg:w-[45%] bg-charcoal dot-grid flex items-center order-1 lg:order-2 px-6 sm:px-10 lg:px-12 xl:px-16 py-16 lg:py-0 min-h-[55vh] lg:min-h-screen">
+          <div className={`w-full max-w-sm lg:max-w-none mx-auto space-y-6 transition-all duration-700 delay-300 ${mounted ? "opacity-100 translate-x-0" : "opacity-0 translate-x-8"}`}>
+
+            {/* Neural visualization */}
+            <div className="relative">
               <div
-                className="w-full py-0 md:py-[10%] sm:py-0 lg:w-1/2 h-[260px] sm:h-[400px] lg:h-[600px] xl:h-[750px] relative flex items-center justify-center order-2 mt-5 sm:mt-0"
-                onMouseEnter={() => setIsHovering(true)}
-                onMouseLeave={() => setIsHovering(false)}
-                data-aos="fade-left"
-                data-aos-delay="600"
-              >
-                <div className="relative w-full opacity-90">
-                  <div className={`absolute inset-0 bg-gradient-to-r from-[#6366f1]/10 to-[#a855f7]/10 rounded-3xl blur-3xl transition-all duration-700 ease-in-out ${isHovering ? "opacity-50 scale-105" : "opacity-20 scale-100"}`}></div>
-                  <div className={`relative lg:left-12 z-10 w-full opacity-90 transform transition-transform duration-500 ${isHovering ? "scale-105" : "scale-100"}`}>
-                    <img src="Animation1.gif" alt="Developer Animation" className={`w-full h-full object-contain transition-all duration-500 ${isHovering ? "scale-[95%] sm:scale-[90%] md:scale-[90%] lg:scale-[90%] rotate-2" : "scale-[90%] sm:scale-[80%] md:scale-[80%] lg:scale-[80%]"}`} />
-                  </div>
-                </div>
+                aria-hidden
+                className="absolute inset-0 rounded-2xl"
+                style={{ background: "radial-gradient(ellipse at center, rgba(0,87,255,0.06) 0%, transparent 70%)" }}
+              />
+              <NeuralViz />
+
+              {/* Floating stat badge */}
+              <div className="absolute top-2 right-0 flex items-center gap-1.5 px-2.5 py-1 bg-charcoal-2 border border-white/10 rounded-lg">
+                <span className="text-[9px] font-mono text-electric-blue">∑</span>
+                <span className="text-[9px] font-mono text-gray-500">neural layers</span>
               </div>
             </div>
+
+            {/* Currently Exploring */}
+            <ExploringPanel items={profile.currentlyExploring} />
+
+            {/* Terminal stats */}
+            <TerminalStats />
+
+            {/* Available badge */}
+            {profile.available && (
+              <div className="flex items-center gap-2.5 px-4 py-2.5 bg-green-500/5 border border-green-500/15 rounded-xl w-fit">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-60" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+                </span>
+                <span className="text-xs font-mono text-green-400">
+                  Open to opportunities
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
